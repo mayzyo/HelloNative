@@ -9,6 +9,7 @@ Ideal scenarios for use:
 * AR?
 
 ## Extra Dependencies Used
+React Navigation
 
 ## Useful Resources
 Native Base - https://nativebase.io/
