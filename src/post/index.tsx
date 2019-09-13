@@ -16,11 +16,14 @@ export default (props: Post) => {
     const [entry, setEntry] = useState<Entry>(props.navigation.getParam('entry') || {})
     const [disabled, setDisabled] = useState<boolean>()
 
+    const handleCat = (cat: string) => {
+        setEntry(p => { return { ...p, cat } })
+    }
+
     const handleCamera = async () => {
         const image = await ImagePicker.openPicker({
             width: 300,
-            height: 400,
-            cropping: true,
+            height: 300,
             includeBase64: true
         })
 
@@ -35,6 +38,7 @@ export default (props: Post) => {
     }
 
     const handleSubmit = async (entry: Entry) => {
+        console.log('submitted post')
         setDisabled(true)
         if (!entry.created) entry.created = new Date()
         entry.modified = new Date()
@@ -82,7 +86,8 @@ export default (props: Post) => {
 
             </KeyboardAvoidingView>
             <View style={{ position: 'absolute', bottom: 150, width: WIDTH - 40, margin: 20 }}>
-                <SelectCat navigation={props.navigation} selected="Abbott" />
+                <SelectCat 
+                navigation={props.navigation} selected={entry.cat} handleSelect={handleCat} />
                 <Button title="Post" onPress={() => handleSubmit(entry)} />
             </View>
         </>
