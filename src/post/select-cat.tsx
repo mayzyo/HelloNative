@@ -1,20 +1,31 @@
-import React, { useState, useEffect } from 'react'
-import { NavigationScreenProp, NavigationRoute, NavigationParams, ScrollView, NavigationScreenProps } from 'react-navigation'
+import React, { useState } from 'react'
+import { NavigationScreenProp, NavigationRoute, NavigationParams, ScrollView } from 'react-navigation'
 import Touchable from 'react-native-platform-touchable'
 import { Text, View, TextInput } from 'react-native'
 import AsyncStorage from '@react-native-community/async-storage'
 
 export default (props: SelectCat) => {
 
-    return (
-        <Touchable onPress={() => {
-            props.navigation.navigate('Drilldown', { 
+    const handleDrilldown = async () => {
+        try {
+            const value = await AsyncStorage.getItem('cats')
+
+            props.navigation.push('Drilldown', { 
                 title: 'Select A Cat',
-                content: <View>
-                    <Text>drilldown works</Text>
-                </View>
+                content: 
+                <SelectDrilldown 
+                navigation={props.navigation} cats={value ? JSON.parse(value) : []} 
+                handleSelect={props.handleSelect}
+                />
             })
-        }}>
+
+        } catch (e) {
+            throw new Error(e) 
+        }
+    }
+
+    return (
+        <Touchable onPress={handleDrilldown}>
             <View style={{ 
                 flexDirection: 'row', 
                 justifyContent: 'space-between',
@@ -32,33 +43,58 @@ export default (props: SelectCat) => {
     )
 }
 
-export const selectDrilldown = (props: SelectDrilldownProps) => {
-
-    const [cats, setCats] = useState<string[]>()
+export const SelectDrilldown = (props: SelectDrilldownProps) => {
+    
+    const [cats, setCats] = useState(props.cats)
     const [newCat, setNewCat] = useState<string>()
 
-    useEffect(() => {
-        const sub = props.navigation.addListener('didFocus', navProps => fetchList())
-        return () => sub.remove()
-    }, [])
+    const handleComplete = async () => {
+        if(newCat == undefined) return
 
-    const fetchList = async () => {
         try {
-            const value = await AsyncStorage.getItem('cats')
-            setCats(value ? JSON.parse(value) : [])
+            await AsyncStorage.setItem('cats', JSON.stringify([...cats, newCat]))
         } catch (e) {
             throw new Error(e) 
         }
+
+        setCats(p => [...p, newCat])
+        const added = newCat
+        setNewCat('')
+        console.log('added new cat')
+        setTimeout(() => {
+            props.handleSelect(added)
+            props.navigation.navigate('Post')
+        }, 1000)
     }
 
     return (
         <ScrollView>
             { cats && cats.map((el, i) =>
-                <Text key={i}>{el}</Text>
+                <Touchable key={i} onPress={() => {
+                    props.handleSelect(el)
+                    props.navigation.navigate('Post')
+                }}>
+                    <Text
+                    style={{ 
+                        marginHorizontal: 20,
+                        height: 75, 
+                        textAlignVertical: 'center',
+                        borderBottomWidth: 1, 
+                        borderBottomColor: 'rgba(0,0,0,0.1)' 
+                    }}>
+                        {el}
+                    </Text>
+                </Touchable>
+
             )}
             <TextInput
+            style={{ marginHorizontal: 20, height: 75, borderBottomWidth: 1, borderBottomColor: 'rgba(0,0,0,0.1)' }}
             value={newCat}
             onChangeText={text => setNewCat(text)}
+            onSubmitEditing={() => handleComplete()}
+            placeholder="add new cat..."
+            returnKeyType="done"
+            returnKeyLabel="add"
             />
         </ScrollView>
     )
@@ -67,8 +103,11 @@ export const selectDrilldown = (props: SelectDrilldownProps) => {
 export interface SelectCat {
     navigation: NavigationScreenProp<NavigationRoute<NavigationParams>, NavigationParams>
     selected: string
+    handleSelect: (cat: string) => void
 }
 
-export interface SelectDrilldownProps extends NavigationScreenProps {
-
+export interface SelectDrilldownProps {
+    navigation: NavigationScreenProp<NavigationRoute<NavigationParams>, NavigationParams>
+    cats: string[]
+    handleSelect: (cat: string) => void
 }

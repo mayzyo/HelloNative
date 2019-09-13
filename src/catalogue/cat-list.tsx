@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { SectionList, View, Text, Platform } from 'react-native'
+import { SectionList, View, Text, Platform, Image } from 'react-native'
 import Touchable from 'react-native-platform-touchable'
 import { NavigationScreenProp, NavigationRoute, NavigationParams } from 'react-navigation'
 import AsyncStorage from '@react-native-community/async-storage'
@@ -21,7 +21,8 @@ const mock: Entry[] = [
 ]
 
 const group = (entries: Entry[]) => {
-    return entries.reduce((acc, cur) => {
+
+    const t = entries.reduce((acc, cur) => {        
         if(cur.created.getMonth == acc[acc.length - 1].title.getMonth) {
             acc[acc.length - 1].data.push(cur)
         } else {
@@ -30,6 +31,8 @@ const group = (entries: Entry[]) => {
 
         return acc
     }, new Array<{ title: Date, data: Entry[] }>({ title: entries[0].created, data: [] }))
+    console.log('tester', t)
+    return t
 }
 
 export default (props: CatList) => {
@@ -49,6 +52,10 @@ export default (props: CatList) => {
         } catch (e) {
             throw new Error(e) 
         } finally {
+            Object.keys(dict).forEach(key => {
+                dict[key].created = new Date(dict[key].created)
+                dict[key].modified = new Date(dict[key].modified)
+            })
             setEntries(Object.keys(dict).map(key => dict[key]).concat(mock))
         }
     }
@@ -76,7 +83,10 @@ export default (props: CatList) => {
         renderItem={({ item }) => 
             <Touchable onPress={() => props.navigation.navigate('Post', { entry: item })}>
                 <View style={{ flex: 1, flexDirection: 'row', margin: 14 }}>
-                    <Text>IMAGE</Text>
+                    { item.image &&
+                        <Image source={{ uri: `data:${item.mime};base64,${item.image}` }} style={{ height: 53, width: 53 }} />
+                    }
+                    
                     <View style={{ flex: 1, marginLeft: 16 }}>
                         <Text style={{ fontSize: 16, fontWeight: 'bold' }}>{item.cat}</Text>  
                         <Text>{item.brief}</Text>
